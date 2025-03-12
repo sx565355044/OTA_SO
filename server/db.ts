@@ -1,11 +1,14 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import pkg from 'pg';
-const { Pool } = pkg;
+import { drizzle } from 'drizzle-orm/mysql2';
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
 
-// 创建 PostgreSQL 连接池
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// 加载环境变量
+dotenv.config();
+
+// 创建 MySQL 连接池
+const pool = mysql.createPool({
+  uri: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
 });
 
 // 初始化 Drizzle ORM
