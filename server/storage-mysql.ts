@@ -12,8 +12,19 @@ import session from 'express-session';
 import { Sequelize } from 'sequelize';
 import SequelizeStore from 'connect-session-sequelize';
 
+// 解析数据库连接字符串
+// 格式: mysql://username:password@hostname:port/database
+const dbUrl = new URL(process.env.DATABASE_URL || '');
+const host = dbUrl.hostname;
+const port = Number(dbUrl.port) || 3306;
+const user = dbUrl.username;
+const password = dbUrl.password;
+const database = dbUrl.pathname.substring(1); // 移除开头的斜杠
+
 // 创建 MySQL 连接
-const sequelize = new Sequelize(process.env.DATABASE_URL || '', {
+const sequelize = new Sequelize(database, user, password, {
+  host,
+  port,
   dialect: 'mysql',
   dialectOptions: {
     ssl: process.env.NODE_ENV === 'production' ? {
@@ -119,6 +130,18 @@ export class MySQLStorage implements IStorage {
     return db.select().from(strategies).where(eq(strategies.user_id, userId));
   }
 
+  async getAppliedStrategiesByUserId(userId: number): Promise<Strategy[]> {
+    return db.select().from(strategies).where(and(eq(strategies.user_id, userId), not(isNull(strategies.applied_at))));
+  }
+
+  async getRecentAppliedStrategies(limit: number): Promise<Strategy[]> {
+    const result = await db.select().from(strategies).where(not(isNull(strategies.applied_at)));
+    return result.sort((a, b) => {
+      if (!a.applied_at || !b.applied_at) return 0;
+      return new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime();
+    }).slice(0, limit);
+  }
+
   async createStrategy(strategy: InsertStrategy): Promise<Strategy> {
     const result = await db.insert(strategies).values(strategy).returning();
     return result[0];
@@ -136,6 +159,11 @@ export class MySQLStorage implements IStorage {
   // API密钥相关方法
   async getApiKey(id: number): Promise<ApiKey | undefined> {
     const result = await db.select().from(apiKeys).where(eq(apiKeys.id, id));
+    return result[0];
+  }
+
+  async getApiKeyByUserIdAndService(userId: number, service: string): Promise<ApiKey | undefined> {
+    const result = await db.select().from(apiKeys).where(and(eq(apiKeys.user_id, userId), eq(apiKeys.service, service)));
     return result[0];
   }
 
