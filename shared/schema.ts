@@ -9,8 +9,8 @@ export const users = mysqlTable("users", {
   password: text("password").notNull(),
   role: text("role").notNull().default("manager"),
   hotel: text("hotel"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -31,8 +31,8 @@ export const otaAccounts = mysqlTable("ota_accounts", {
   password: text("password").notNull(),
   account_type: text("account_type"),
   status: text("status").default("active"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertOtaAccountSchema = createInsertSchema(otaAccounts).pick({
@@ -53,8 +53,8 @@ export const activities = mysqlTable("activities", {
   user_id: int("user_id").references(() => users.id),
   name: text("name").notNull(),
   description: text("description"),
-  start_date: timestamp("start_date"),
-  end_date: timestamp("end_date"),
+  start_date: timestamp("start_date", { mode: 'string' }),
+  end_date: timestamp("end_date", { mode: 'string' }),
   discount: text("discount"),
   commission_rate: text("commission_rate"),
   room_types: json("room_types").$type<string[]>(),
@@ -63,8 +63,8 @@ export const activities = mysqlTable("activities", {
   status: text("status").default("active"),
   tag: text("tag"),
   participation_status: text("participation_status").default("pending"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertActivitySchema = createInsertSchema(activities).pick({
@@ -97,9 +97,9 @@ export const strategies = mysqlTable("strategies", {
   expected_outcome: text("expected_outcome"),
   parameters_used: json("parameters_used").$type<Record<string, number>>(),
   status: text("status").default("draft"),
-  applied_at: timestamp("applied_at"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  applied_at: timestamp("applied_at", { mode: 'string' }),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertStrategySchema = createInsertSchema(strategies).pick({
@@ -123,8 +123,8 @@ export const apiKeys = mysqlTable("api_keys", {
   service: text("service").notNull(),
   encrypted_key: text("encrypted_key").notNull(),
   model: text("model"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
@@ -141,8 +141,8 @@ export const settings = mysqlTable("settings", {
   notifications_enabled: boolean("notifications_enabled").default(true),
   auto_refresh_interval: int("auto_refresh_interval").default(30),
   default_strategy_preference: text("default_strategy_preference").default("balanced"),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).pick({
@@ -159,8 +159,8 @@ export const strategyParameters = mysqlTable("strategy_parameters", {
   description: text("description"),
   param_key: text("param_key").notNull().unique(),
   value: float("value").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertStrategyParameterSchema = createInsertSchema(strategyParameters).pick({
@@ -177,8 +177,8 @@ export const strategyTemplates = mysqlTable("strategy_templates", {
   description: text("description"),
   template_text: text("template_text").notNull(),
   parameters: json("parameters").$type<string[]>(),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  created_at: timestamp("created_at", { mode: 'string' }).defaultNow(),
+  updated_at: timestamp("updated_at", { mode: 'string' }).defaultNow(),
 });
 
 export const insertStrategyTemplateSchema = createInsertSchema(strategyTemplates).pick({
