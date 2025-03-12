@@ -1,15 +1,16 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, real } from "drizzle-orm/pg-core";
+import { mysqlTable, text, serial, int, boolean, timestamp, json, float } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Users table for authentication
-export const users = pgTable("users", {
+export const users = mysqlTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   role: text("role").notNull().default("manager"),
   hotel: text("hotel"),
-  createdAt: timestamp("created_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -20,172 +21,174 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 // OTA platform accounts
-export const otaAccounts = pgTable("ota_accounts", {
+export const otaAccounts = mysqlTable("ota_accounts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  user_id: int("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
-  shortName: text("short_name"),
+  short_name: text("short_name"),
   url: text("url").notNull(),
   username: text("username").notNull(),
   password: text("password").notNull(),
-  verificationMethod: text("verification_method").default("none"), // 验证方法：none, sms, email, captcha
-  phoneNumber: text("phone_number"), // 如果需要手机验证码，存储手机号
-  accountType: text("account_type").notNull(),
-  status: text("status").notNull().default("未连接"),
-  lastUpdated: timestamp("last_updated").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
+  account_type: text("account_type"),
+  status: text("status").default("active"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertOtaAccountSchema = createInsertSchema(otaAccounts).pick({
-  userId: true,
+  user_id: true,
   name: true,
-  shortName: true,
+  short_name: true,
   url: true,
   username: true,
   password: true,
-  verificationMethod: true,
-  phoneNumber: true,
-  accountType: true,
+  account_type: true,
   status: true,
 });
 
-// OTA promotion activities
-export const activities = pgTable("activities", {
+// Promotional activities from OTA platforms
+export const activities = mysqlTable("activities", {
   id: serial("id").primaryKey(),
-  platformId: integer("platform_id").notNull().references(() => otaAccounts.id),
+  platform_id: int("platform_id").notNull().references(() => otaAccounts.id),
+  user_id: int("user_id").references(() => users.id),
   name: text("name").notNull(),
   description: text("description"),
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  discount: text("discount").notNull(),
-  commissionRate: text("commission_rate").notNull(),
-  roomTypes: text("room_types").array(),
-  minimumStay: integer("minimum_stay"),
-  maxBookingWindow: integer("max_booking_window"),
-  status: text("status").notNull().default("未决定"),
+  start_date: timestamp("start_date"),
+  end_date: timestamp("end_date"),
+  discount: text("discount"),
+  commission_rate: text("commission_rate"),
+  room_types: json("room_types").$type<string[]>(),
+  minimum_stay: int("minimum_stay"),
+  max_booking_window: int("max_booking_window"),
+  status: text("status").default("active"),
   tag: text("tag"),
-  participationStatus: text("participation_status").default("未参与"),
-  createdAt: timestamp("created_at").defaultNow(),
+  participation_status: text("participation_status").default("pending"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertActivitySchema = createInsertSchema(activities).pick({
-  platformId: true,
+  platform_id: true,
+  user_id: true,
   name: true,
   description: true,
-  startDate: true,
-  endDate: true,
+  start_date: true,
+  end_date: true,
   discount: true,
-  commissionRate: true,
-  roomTypes: true,
-  minimumStay: true,
-  maxBookingWindow: true,
+  commission_rate: true,
+  room_types: true,
+  minimum_stay: true,
+  max_booking_window: true,
   status: true,
   tag: true,
+  participation_status: true,
 });
 
-// AI Strategy recommendations
-export const strategies = pgTable("strategies", {
+// Strategies generated or applied
+export const strategies = mysqlTable("strategies", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  user_id: int("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
-  description: text("description").notNull(),
-  isRecommended: boolean("is_recommended").default(false),
-  advantages: text("advantages").array(),
-  disadvantages: text("disadvantages").array(),
-  steps: text("steps").array(),
-  notes: text("notes").array(),
-  metrics: json("metrics").notNull(),
-  activityIds: integer("activity_ids").array(),
-  appliedAt: timestamp("applied_at"),
-  appliedBy: text("applied_by"),
-  createdAt: timestamp("created_at").defaultNow(),
+  description: text("description"),
+  platform_id: int("platform_id").references(() => otaAccounts.id),
+  activity_id: int("activity_id").references(() => activities.id),
+  recommendation: text("recommendation"),
+  reasoning: text("reasoning"),
+  expected_outcome: text("expected_outcome"),
+  parameters_used: json("parameters_used").$type<Record<string, number>>(),
+  status: text("status").default("draft"),
+  applied_at: timestamp("applied_at"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertStrategySchema = createInsertSchema(strategies).pick({
-  userId: true,
+  user_id: true,
   name: true,
   description: true,
-  isRecommended: true,
-  advantages: true,
-  disadvantages: true,
-  steps: true,
-  notes: true,
-  metrics: true,
-  activityIds: true,
+  platform_id: true,
+  activity_id: true,
+  recommendation: true,
+  reasoning: true,
+  expected_outcome: true,
+  parameters_used: true,
+  status: true,
+  applied_at: true,
 });
 
-// API Keys for third-party services
-export const apiKeys = pgTable("api_keys", {
+// API keys for external services
+export const apiKeys = mysqlTable("api_keys", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  user_id: int("user_id").notNull().references(() => users.id),
   service: text("service").notNull(),
-  encryptedKey: text("encrypted_key").notNull(),
+  encrypted_key: text("encrypted_key").notNull(),
   model: text("model"),
-  lastUpdated: timestamp("last_updated").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
-  userId: true,
+  user_id: true,
   service: true,
-  encryptedKey: true,
+  encrypted_key: true,
   model: true,
 });
 
-// User preferences and settings
-export const settings = pgTable("settings", {
+// User settings
+export const settings = mysqlTable("settings", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id).unique(),
-  notificationsEnabled: boolean("notifications_enabled").default(true),
-  autoRefreshInterval: integer("auto_refresh_interval").default(30),
-  defaultStrategyPreference: text("default_strategy_preference").default("balanced"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  user_id: int("user_id").notNull().references(() => users.id).unique(),
+  notifications_enabled: boolean("notifications_enabled").default(true),
+  auto_refresh_interval: int("auto_refresh_interval").default(30),
+  default_strategy_preference: text("default_strategy_preference").default("balanced"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertSettingsSchema = createInsertSchema(settings).pick({
-  userId: true,
-  notificationsEnabled: true,
-  autoRefreshInterval: true,
-  defaultStrategyPreference: true,
+  user_id: true,
+  notifications_enabled: true,
+  auto_refresh_interval: true,
+  default_strategy_preference: true,
 });
 
-// Strategy parameters for admin configuration
-export const strategyParameters = pgTable("strategy_parameters", {
+// Strategy parameters
+export const strategyParameters = mysqlTable("strategy_parameters", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  description: text("description").notNull(),
-  paramKey: text("param_key").notNull().unique(),
-  value: real("value").notNull().default(5.0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  description: text("description"),
+  param_key: text("param_key").notNull().unique(),
+  value: float("value").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertStrategyParameterSchema = createInsertSchema(strategyParameters).pick({
   name: true,
   description: true,
-  paramKey: true,
+  param_key: true,
   value: true,
 });
 
-// Strategy templates (saved successful strategies)
-export const strategyTemplates = pgTable("strategy_templates", {
+// Strategy templates
+export const strategyTemplates = mysqlTable("strategy_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  description: text("description").notNull(),
-  strategyId: integer("strategy_id").notNull().references(() => strategies.id),
-  addedBy: text("added_by").notNull(),
-  addedAt: timestamp("added_at").defaultNow(),
+  description: text("description"),
+  template_text: text("template_text").notNull(),
+  parameters: json("parameters").$type<string[]>(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const insertStrategyTemplateSchema = createInsertSchema(strategyTemplates).pick({
   name: true,
   description: true,
-  strategyId: true,
-  addedBy: true,
+  template_text: true,
+  parameters: true,
 });
 
-// Type exports
+// Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
